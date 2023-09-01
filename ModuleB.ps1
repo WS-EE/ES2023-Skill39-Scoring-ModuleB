@@ -10,11 +10,14 @@ Function Get-AspectResult {
         [string]$User="Administrator",
         [string]$JumpUser="Administrator",
         [string]$SshKey="C:\Marking\moduleb",
-        [switch]$Red=$False
+        [switch]$Red=$False,
+        [switch]$Local=$False
     )
     Write-Host "Running command: $Cmd"
     if ($JumpIp) {
         $output = ssh -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SshKey -W %h:%p $JumpUser@$JumpIp" -i $SshKey $User@$Ip "try { $Cmd } catch { Write-Host 'Command: "$Cmd" threw an error' }"
+    } elseif ($Local) {
+        $output = try { Invoke-Expression $Cmd } catch { Write-Host "Command: $Cmd threw an error" }
     } else {
         $output = ssh -o "StrictHostKeyChecking=no" -i $SshKey $User@$Ip "try { $Cmd } catch { Write-Host 'Command: "$Cmd" threw an error' }"
     }
@@ -101,8 +104,8 @@ if ($Aspect -eq "B1" -or $Aspect -eq "B1.M3" -or $Aspect -eq "B1M3" -or !$Aspect
     Start-Marking -Aspect "B1.M3"
 }
 
+# B1.M4 - RAS: S2S interfaces are persistent
 if ($Aspect -eq "B1" -or $Aspect -eq "B1.M4" -or $Aspect -eq "B1M4" -or !$Aspect) {
-    # B1.M4 - RAS: S2S interfaces are persistent
     Initialize-Marking -Aspect "B1.M4" -Description "RAS: S2S interfaces are persistent"
     $B1M4 = Get-AspectResult -Ip 10.1.0.254 -Cmd "Get-VpnS2SInterface | Select Name, Destination, Persistent"
     Test-AspectResult -Aspect "B1.M4" -String $B1M4 -Expected "Interface is persistent"
