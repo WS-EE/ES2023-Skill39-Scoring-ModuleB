@@ -22,3 +22,17 @@ Run specific Aspect test:
 PS > ModuleB.ps1 -Aspect B3.M1
 PS > ModuleB.ps1 -Aspect B5.J1
 ```
+
+AD users import checker:
+```
+PS > ADUserChecker.ps1 -Domain dk.skill39.wse -CsvFilePath ".\ES2023_TP39_ModuleB_Users.csv"
+```
+
+Encrypt and Decrypt files:
+```
+# Encrypt
+PS > EncryptDecryptFile.ps1 -FilePath .\ModuleB.ps1 -Password "EuroSkills2023" -Action encrypt
+
+# Decrypt
+PS > EncryptDecryptFile.ps1 -FilePath .\ModuleB.ps1.encrypted -Password "EuroSkills2023" -Action decrypt
+```
