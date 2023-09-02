@@ -14,10 +14,10 @@ Function Get-AspectResult {
         [switch]$Local=$False
     )
     Write-Host "Running command: $Cmd"
-    if ($JumpIp) {
-        $output = ssh -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SshKey -W %h:%p $JumpUser@$JumpIp" -i $SshKey $User@$Ip "try { $Cmd } catch { Write-Host 'Command: "$Cmd" threw an error' }"
-    } elseif ($Local) {
+    if ($Local) {
         $output = try { Invoke-Expression $Cmd } catch { Write-Host "Command: $Cmd threw an error" }
+    } elseif ($JumpIp) {
+        $output = ssh -o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SshKey -W %h:%p $JumpUser@$JumpIp" -i $SshKey $User@$Ip "try { $Cmd } catch { Write-Host 'Command: "$Cmd" threw an error' }"
     } else {
         $output = ssh -o "StrictHostKeyChecking=no" -i $SshKey $User@$Ip "try { $Cmd } catch { Write-Host 'Command: "$Cmd" threw an error' }"
     }
