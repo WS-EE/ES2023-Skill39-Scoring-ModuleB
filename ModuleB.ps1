@@ -154,7 +154,7 @@ if ($Aspect -eq "B2" -or $Aspect -eq "B2.M5" -or $Aspect -eq "B2M5" -or !$Aspect
 
 # B2.M6 - DNS: Reverse Stub Zones exist
 if ($Aspect -eq "B2" -or $Aspect -eq "B2.M6" -or $Aspect -eq "B2M6" -or !$Aspect) {
-    Initialize-Marking -Aspect "B2.M6" -Description "DNS: Forward Stub Zones exist"
+    Initialize-Marking -Aspect "B2.M6" -Description "DNS: Reverse Stub Zones exist"
     $B2M6 = Get-AspectResult -Ip 10.1.0.1 -Cmd 'Get-DnsServerZone | Where {$_.ZoneType -Eq ''Stub''}'
     Test-AspectResult -Aspect "B2.M6" -String $B2M6 -Expected "0.2.10.in-addr.arpa; 0.3.10.in-addr.arpa"
     Start-Marking -Aspect "B2.M6"
@@ -184,10 +184,24 @@ if ($Aspect -eq "B2" -or $Aspect -eq "B2.M9" -or $Aspect -eq "B2M9" -or !$Aspect
     Start-Marking -Aspect "B2.M9"
 }
 
-# B3.M1 - ADCS: Machine status is off
+# B2.M10 - Automation: Script is running every 2 minutes
+if ($Aspect -eq "B2" -or $Aspect -eq "B2.M10" -or $Aspect -eq "B2M10" -or !$Aspect) {
+    Initialize-Marking -Aspect "B2.M10" -Description "Automation: Script is running every 2 minutes"
+    Test-AspectResult -Manual $True -Aspect "B2.M10" -Expected "CSV file is updated/crated to defined location every 2 minutes"
+    Start-Marking -Aspect "B2.M10"
+}
+
+# B2.M11 - Automation: Script generates CSV file of users in Skill39 Enterprise who haven't logged in
+if ($Aspect -eq "B2" -or $Aspect -eq "B2.M11" -or $Aspect -eq "B2M11" -or !$Aspect) {
+    Initialize-Marking -Aspect "B2.M11" -Description "Automation: Script generates CSV file of users in Skill39 Enterprise who haven't logged in"
+    Test-AspectResult -Manual $True -Aspect "B2.M11" -Expected "`n 0 - There is no CSV file or CSV file is empty `n 1 - CSV file includes list of users who haven't logged in for atleast one domain `n 2 - CSV file includes list of users who haven't logged in for root and child domains `n 3 - Script runs without errors and has extra feature added, e.g. comments, etc"
+    Start-Marking -Aspect "B2.M11"
+}
+
+# B3.M1 - ADCS: Machine network interface is disabled
 if ($Aspect -eq "B3" -or $Aspect -eq "B3.M1" -or $Aspect -eq "B3M1" -or !$Aspect) {
-    Initialize-Marking -Aspect "B3.M1" -Description "ADCS: Machine status is off"
-    Test-AspectResult -Aspect "B3.M1" -Expected "CLOUD-ROOTCA VM is powered off" -Manual $True
+    Initialize-Marking -Aspect "B3.M1" -Description "ADCS: Machine network interface is disabled"
+    Test-AspectResult -Aspect "B3.M1" -Expected "CLOUD-ROOTCA VM network adapter is disabled" -Manual $True
     Start-Marking -Aspect "B3.M1"
 }
 
@@ -223,49 +237,15 @@ if ($Aspect -eq "B5" -or $Aspect -eq "B5.M2" -or $Aspect -eq "B5M2" -or !$Aspect
     Start-Marking -Aspect "B5.M2" 
 }
 
-# B5.M3 - ADCS: PL SubCA CN is "Skill39-PL-CA"
+# B5.M3 - GPO: PowerShell remoting to DK-CLIENT works
 if ($Aspect -eq "B5" -or $Aspect -eq "B5.M3" -or $Aspect -eq "B5M3" -or !$Aspect) {
-    Initialize-Marking -Aspect "B5.M3" -Description "ADCS: PL SubCA CN is 'Skill39-PL-CA'"
-    $B5M3 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'certutil -ping PL-DC.pl.skill39.wse\Skill39-PL-CA'
-    Test-AspectResult -Aspect "B5.M3" -String $B5M3 -Expected "Interface is alive"
+    Initialize-Marking -Aspect "B5.M3" -Description "GPO: PowerShell remoting to DK-CLIENT works"
+    $B8M9 = Get-AspectResult -Ip 10.3.0.1 -Cmd 'Test-WSMan -ComputerName DK-CLIENT'
+    Test-AspectResult -Aspect "B5.M3" -String $B8M9 -Expected "Output with WinRM protocol information"
     Start-Marking -Aspect "B5.M3"
 }
 
-# B5.M4 - ADCS: PL SubCA certificate has correct CDP and AIA parameters
-if ($Aspect -eq "B5" -or $Aspect -eq "B5.M4" -or $Aspect -eq "B5M4" -or !$Aspect) {
-    Initialize-Marking -Aspect "B5.M4" -Description "ADCS: PL SubCA certificate has correct CDP and AIA parameters"
-    $B5M4 = Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-CACrlDistributionPoint | Where AddtoCertificateCdp).Uri; (Get-CAAuthorityInformationAccess).Uri'
-    Test-AspectResult -Aspect "B5.M4" -String $B5M4 -Expected "`n crl.pl.skill39.wse `n crl.skill39.wse `n cacerts.pl.skill39.wse `n cacerts.skill39.wse `n"
-    Start-Marking -Aspect "B5.M4"
-}
-
-# B5.M5 - ADCS: CRL autopublish to PL CDP location is successful
-if ($Aspect -eq "B5" -or $Aspect -eq "B5.M5" -or $Aspect -eq "B5M5" -or !$Aspect) {
-    Initialize-Marking -Aspect "B5.M5" -Description "ADCS: CRL autopublish to PL CDP location is successful"
-    Write-Host -NoNewline "Current timestamp: "
-    Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-Date).ToString(''dd.MM.yyyy hh:mm'')'
-    $B5M5 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'certutil -crl; Invoke-WebRequest -Uri http://crl.pl.skill39.wse/Skill39-PL-CA.crl -OutFile Skill39-PL-CA_PL.crl | certutil Skill39-PL-CA_PL.crl | Select-String CN, ThisUpdate, CRL'
-    Test-AspectResult -Aspect "B5.M5" -String $B5M5 -Expected "Compare timestamps"
-    Start-Marking -Aspect "B5.M5"
-}
-
-# B5.M6 - ADCS: CRL autopublish to CLOUD CDP location is successful
-if ($Aspect -eq "B5" -or $Aspect -eq "B5.M6" -or $Aspect -eq "B5M6" -or !$Aspect) {
-    Initialize-Marking -Aspect "B5.M6" -Description "ADCS: CRL autopublish to CLOUD CDP location is successful"
-    Write-Host -NoNewline "Current timestamp: "
-    Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-Date).ToString(''dd.MM.yyyy hh:mm'')'
-    $B5M6 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'certutil -crl; Invoke-WebRequest -Uri http://crl.skill39.wse/Skill39-PL-CA.crl -OutFile Skill39-PL-CA_CLOUD.crl | certutil Skill39-PL-CA_CLOUD.crl | Select-String CN, ThisUpdate, CRL'
-    Test-AspectResult -Aspect "B5.M6" -String $B5M6 -Expected "Compare timestamps"
-    Start-Marking -Aspect "B5.M6"
-}
-
-# B5.M7 - ADCS: PL-Users and PL-Server templates are published
-if ($Aspect -eq "B5" -or $Aspect -eq "B5.M7" -or $Aspect -eq "B5M7" -or !$Aspect) {
-    Initialize-Marking -Aspect "B5.M7" -Description "ADCS: PL-Users and PL-Server templates are published"
-    $B5M7 = Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-CATemplate).Name | Select-String PL-'
-    Test-AspectResult -Aspect "B5.M7" -String $B5M7 -Expected "`n PL-User `n PL-Server `n"
-    Start-Marking -Aspect "B5.M7"
-}
+# B5.M4 - 
 
 # B5.J1 - ADDS: Imported users from the excel file with correct parameters
 if ($Aspect -eq "B5" -or $Aspect -eq "B5.J1" -or $Aspect -eq "B5J1" -or !$Aspect) {
@@ -282,73 +262,65 @@ if ($Aspect -eq "B6" -or $Aspect -eq "B6.M1" -or $Aspect -eq "B6M1" -or !$Aspect
     Start-Marking -Aspect "B6.M1"
 }
 
-# B6.M2 - Web: IIS Certificate has been issued by "PL-Server" template
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M2" -or $Aspect -eq "B6M2" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M2" -Description "Web: IIS Certificate has been issued by 'PL-Server' template"
-    $B6M2 = Get-AspectResult -Ip 10.2.0.20 -Cmd 'Import-Module WebAdministration; $thumbprint = (Get-ChildItem IIS:SSLBindings | Where { $_.Port -Like 443 }).Thumbprint; $cert = Get-ChildItem -Path Cert:\LocalMachine\My | Where { $_.Thumbprint -eq $thumbprint }; ($cert.Extensions | Where { $_.Oid.FriendlyName -eq ''Certificate Template Information'' }).Format(0)'
-    Test-AspectResult -Aspect "B6.M2" -String $B6M2 -Expected "Template=PL-Server"
+# B6.M2 - File: DFS Namespace root "dfs" exist
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M2" -or $Aspect -eq "B6M3" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M2" -Description 'File: DFS Namespace root "dfs" exist'
+    $B6M2 = Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-DfsnRoot).Path'
+    Test-AspectResult -Aspect "B6.M2" -String $B6M2 -Expected '\\pl.skill39.wse\dfs'
     Start-Marking -Aspect "B6.M2"
 }
 
-# B6.M3 - File: DFS Namespace root "dfs" exist
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M3" -or $Aspect -eq "B6M3" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M3" -Description 'File: DFS Namespace root "dfs" exist'
-    $B6M3 = Get-AspectResult -Ip 10.2.0.1 -Cmd '(Get-DfsnRoot).Path'
-    Test-AspectResult -Aspect "B6.M3" -String $B6M3 -Expected '\\pl.skill39.wse\dfs'
+# B6.M3 - File: DFS Namespace has department shares folders
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M3" -or $Aspect -eq "B6M4" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M3" -Description 'File: DFS Namespace has department shares folders'
+    $B6M3 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsnFolder -Path ''\\pl.skill39.wse\dfs\*'''
+    Test-AspectResult -Aspect "B6.M3" -String $B6M3 -Expected "`n \\pl.skill39.wse\dfs\Experts `n \\pl.skill39.wse\dfs\Competitors `n \\pl.skill39.wse\dfs\Managers `n"
     Start-Marking -Aspect "B6.M3"
 }
 
-# B6.M4 - File: DFS Namespace has department shares folders
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M4" -or $Aspect -eq "B6M4" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M4" -Description 'File: DFS Namespace has department shares folders'
-    $B6M4 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsnFolder -Path ''\\pl.skill39.wse\dfs\*'''
-    Test-AspectResult -Aspect "B6.M3" -String $B6M4 -Expected "`n \\pl.skill39.wse\dfs\Experts `n \\pl.skill39.wse\dfs\Competitors `n \\pl.skill39.wse\dfs\Managers `n"
+# B6.M4 - File: DFS Replication is configured between PL-SRV and PL-DC
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M4" -or $Aspect -eq "B6M5" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M4" -Description 'File: DFS Replication is configured between PL-SRV and PL-DC'
+    $B6M4 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsrConnection | Select GroupName, SourceComputerName, DestinationComputerName'
+    Test-AspectResult -Aspect "B6.M4" -String $B6M4 -Expected "There is 6 DFS connections, two for each share"
     Start-Marking -Aspect "B6.M4"
 }
 
-# B6.M5 - File: DFS Replication is configured between PL-SRV and PL-DC
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M5" -or $Aspect -eq "B6M5" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M5" -Description 'File: DFS Replication is configured between PL-SRV and PL-DC'
-    $B6M5 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsrConnection | Select GroupName, SourceComputerName, DestinationComputerName'
-    Test-AspectResult -Aspect "B6.M5" -String $B6M5 -Expected "There is 6 DFS connections, two for each share"
+# B6.M5 - File: DFS share local paths are correct
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M5" -or $Aspect -eq "B6M6" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M5" -Description "File: DFS share local paths are correct"
+    $B6M5 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsnFolderTarget ''\\pl.skill39.wse\dfs\Experts'''
+    Test-AspectResult -Aspect "B6.M5" -String $B6M5 -Expected "`n TargetPath: `n \\pl-srv.pl.skill39.wse\Experts `n \\pl-dc.pl.skill39.wse\Experts `n"
     Start-Marking -Aspect "B6.M5"
 }
 
-# B6.M6 - File: DFS share local paths are correct
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M6" -or $Aspect -eq "B6M6" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M6" -Description "File: DFS share local paths are correct"
-    $B6M6 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Get-DfsnFolderTarget ''\\pl.skill39.wse\dfs\Experts'''
-    Test-AspectResult -Aspect "B6.M6" -String $B6M6 -Expected "`n TargetPath: `n \\pl-srv.pl.skill39.wse\Experts `n \\pl-dc.pl.skill39.wse\Experts `n"
+# B6.M6 - DHCP: Configured according to PL infrastructure
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M6" -or $Aspect -eq "B6M7" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M6" -Description "DHCP: Configured according to PL infrastructure"
+    $B6M6 = Get-AspectResult -Ip 10.2.0.20 -Cmd 'Get-DhcpServerv4OptionValue -ScopeId ''10.2.0.0'' | Select OptionId, Name, Value'
+    Test-AspectResult -Aspect "B6.M6" -String $B6M6 -Expected "`n Router - 10.2.0.254 `n DNS Domain Name - pl.skill39.wse `n DNS Servers - 10.2.0.1 `n"
     Start-Marking -Aspect "B6.M6"
 }
 
-# B6.M7 - DHCP: Configured according to PL infrastructure
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M7" -or $Aspect -eq "B6M7" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M7" -Description "DHCP: Configured according to PL infrastructure"
-    $B6M7 = Get-AspectResult -Ip 10.2.0.20 -Cmd 'Get-DhcpServerv4OptionValue -ScopeId ''10.2.0.0'' | Select OptionId, Name, Value'
-    Test-AspectResult -Aspect "B6.M7" -String $B6M7 -Expected "`n Router - 10.2.0.254 `n DNS Domain Name - pl.skill39.wse `n DNS Servers - 10.2.0.1 `n"
+# B6.M7 - DHCP: Pool range 10.2.0.100-10.2.0.150
+if ($Aspect -eq "B6" -or $Aspect -eq "B6.M7" -or $Aspect -eq "B6M8" -or !$Aspect) {
+    Initialize-Marking -Aspect "B6.M7" -Description "DHCP: Pool range 10.2.0.100-10.2.0.150"
+    $B6M7 = Get-AspectResult -Ip 10.2.0.20 -Cmd 'Get-DhcpServerv4Scope | Select StartRange, EndRange'
+    Test-AspectResult -Aspect "B6.M7" -String $B6M7 -Expected "Start - 10.2.0.100; End - 10.2.0.150"
     Start-Marking -Aspect "B6.M7"
 }
 
-# B6.M8 - DHCP: Pool range 10.2.0.100-10.2.0.150
-if ($Aspect -eq "B6" -or $Aspect -eq "B6.M8" -or $Aspect -eq "B6M8" -or !$Aspect) {
-    Initialize-Marking -Aspect "B6.M8" -Description "DHCP: Pool range 10.2.0.100-10.2.0.150"
-    $B6M8 = Get-AspectResult -Ip 10.2.0.20 -Cmd 'Get-DhcpServerv4Scope | Select StartRange, EndRange'
-    Test-AspectResult -Aspect "B6.M8" -String $B6M8 -Expected "Start - 10.2.0.100; End - 10.2.0.150"
-    Start-Marking -Aspect "B6.M8"
-}
-
-# B7.M1 - Web: User can access http://web.pl.skill39.wse
+# B7.M1 - Web: User can access http://web.dk.skill39.wse
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M1" -or $Aspect -eq "B7M1" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M1" -Description "Web: User can access http://web.pl.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B7.M1" -Expected "PL-CLIENT: Try to log-in with user account into web portal at http://web.pl.skill39.wse"
+    Initialize-Marking -Aspect "B7.M1" -Description "Web: User can access http://web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B7.M1" -Expected "PL-CLIENT: Try to log-in with user account into web portal at http://web.dk.skill39.wse"
     Start-Marking -Aspect "B7.M1"
 }
 
-# B7.M2 - Web: User can access http://web.pl.skill39.wse
+# B7.M2 - Web: User can access http://web.dk.skill39.wse
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M2" -or $Aspect -eq "B7M2" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M2" -Description "Web: User can access https://web.pl.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B7.M2" -Expected "PL-CLIENT: Try to log-in with user account into web portal at https://web.pl.skill39.wse"
+    Initialize-Marking -Aspect "B7.M2" -Description "Web: User can access https://web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B7.M2" -Expected "PL-CLIENT: Try to log-in with user account into web portal at https://web.dk.skill39.wse"
     Start-Marking -Aspect "B7.M2"
 }
 
@@ -389,10 +361,10 @@ if ($Aspect -eq "B7" -or $Aspect -eq "B7.M7" -or $Aspect -eq "B7M7" -or !$Aspect
     Start-Marking -Aspect "B7.M7"
 }
 
-# B7.M8 - GPO: Edge homepage and start-up page is web.pl.skill39.wse
+# B7.M8 - GPO: Edge homepage and start-up page is web.dk.skill39.wse
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M8" -or $Aspect -eq "B7M8" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M8" -Description "GPO: Edge homepage and start-up page is web.pl.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B7.M8" -Expected "PL-CLIENT: Edge opens web.pl.skill39.wse"
+    Initialize-Marking -Aspect "B7.M8" -Description "GPO: Edge homepage and start-up page is web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B7.M8" -Expected "PL-CLIENT: Edge opens web.dk.skill39.wse"
     Start-Marking -Aspect "B7.M8"
 }
 
@@ -483,6 +455,23 @@ if ($Aspect -eq "B8" -or $Aspect -eq "B8.M9" -or $Aspect -eq "B8M9" -or !$Aspect
     Start-Marking -Aspect "B8.M9"
 }
 
+# B8.M10 - DHCP: Configured according to DK infrastructure
+if ($Aspect -eq "B8" -or $Aspect -eq "B8.M10" -or $Aspect -eq "B8M10" -or !$Aspect) {
+    Initialize-Marking -Aspect "B8.M10" -Description "DHCP: Configured according to PL infrastructure"
+    $B8M10 = Get-AspectResult -Ip 10.3.0.1 -Cmd 'Get-DhcpServerv4OptionValue -ScopeId ''10.3.0.0'' | Select OptionId, Name, Value'
+    Test-AspectResult -Aspect "B8.M10" -String $B8M10 -Expected "`n Router - 10.3.0.254 `n DNS Domain Name - pl.skill39.wse `n DNS Servers - 10.3.0.1 `n"
+    Start-Marking -Aspect "B8.M10"
+}
+
+# B8.M11 - DHCP: Pool range 10.3.0.100-10.3.0.150
+if ($Aspect -eq "B8" -or $Aspect -eq "B8.M11" -or $Aspect -eq "B8M11" -or !$Aspect) {
+    Initialize-Marking -Aspect "B8.M11" -Description "DHCP: Pool range 10.3.0.100-10.3.0.150"
+    $B8M11 = Get-AspectResult -Ip 10.3.0.1 -Cmd 'Get-DhcpServerv4Scope | Select StartRange, EndRange'
+    Test-AspectResult -Aspect "B8.M11" -String $B8M11 -Expected "Start - 10.3.0.100; End - 10.3.0.150"
+    Start-Marking -Aspect "B8.M11"
+}
+
+
 # B8.J1 - ADDS: Imported users from the excel file with correct parameters
 if ($Aspect -eq "B8" -or $Aspect -eq "B8.J1" -or $Aspect -eq "B8J1" -or !$Aspect) {
     Initialize-Marking -Aspect "B8.J1" -Description "ADDS: Imported users from the excel file with correct parameters"
@@ -514,43 +503,51 @@ if ($Aspect -eq "B9" -or $Aspect -eq "B9.M3" -or $Aspect -eq "B9M3" -or !$Aspect
     Start-Marking -Aspect "B9.M3"
 }
 
-# B10.M1 - Storage: iSCSI disk configured correctly
-if ($Aspect -eq "B10" -or $Aspect -eq "B10.M1" -or $Aspect -eq "B10M1" -or !$Aspect) {
-    Initialize-Marking -Aspect "B10.M1" -Description "Storage: iSCSI disk configured correctly"
-    $B10M1 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-IscsiTarget'
-    Test-AspectResult -Aspect "B10.M1" -String $B10M1 -Expected "iSCSI disk is connected to dk-storage"
+# B10.M1 - Web: IIS Certificate has been issued by "DK-Server" template
+if ($Aspect -eq "B10.M1" -or $Aspect -eq "B10.M1" -or $Aspect -eq "B10M1" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M1" -Description "Web: IIS Certificate has been issued by 'DK-Server' template"
+    $B10M1 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Import-Module WebAdministration; $thumbprint = (Get-ChildItem IIS:SSLBindings | Where { $_.Port -Like 443 }).Thumbprint; $cert = Get-ChildItem -Path Cert:\LocalMachine\My | Where { $_.Thumbprint -eq $thumbprint }; ($cert.Extensions | Where { $_.Oid.FriendlyName -eq ''Certificate Template Information'' }).Format(0)'
+    Test-AspectResult -Aspect "B10.M1" -String $B10M1 -Expected "Template=PL-Server"
     Start-Marking -Aspect "B10.M1"
 }
 
-# B10.M2 - Cluster: Configured as DK-CLUSTER
-if ($Aspect -eq "B10" -or $Aspect -eq "B10.M2" -or $Aspect -eq "B10M2" -or !$Aspect) {
-    Initialize-Marking -Aspect "B10.M2" -Description "Cluster: Configured as DK-CLUSTER"
-    $B10M2 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-Cluster'
-    Test-AspectResult -Aspect "B10.M2" -String $B10M2 -Expected "DK-CLUSTER"
+# B10.M2 - Storage: iSCSI disk configured correctly
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M2" -or $Aspect -eq "B10M1" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M2" -Description "Storage: iSCSI disk configured correctly"
+    $B10M2 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-IscsiTarget'
+    Test-AspectResult -Aspect "B10.M2" -String $B10M2 -Expected "iSCSI disk is connected to dk-storage"
     Start-Marking -Aspect "B10.M2"
 }
 
-# B10.M3 - Cluster: Quorum witness configured
-if ($Aspect -eq "B10" -or $Aspect -eq "B10.M3" -or $Aspect -eq "B10M3" -or !$Aspect) {
-    Initialize-Marking -Aspect "B10.M3" -Description "Cluster: Quorum witness configured"
-    $B10M3 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-ClusterResource | Where { $_.ResourceType -Like ''File Share Witness'' } | Get-ClusterParameter ''SharePath'''
-    Test-AspectResult -Aspect "B10.M3" -String $B10M3 -Expected "SharePath value: \\dk-dc.dk.skill39.wse\witness"
+# B10.M3 - Cluster: Configured as DK-CLUSTER
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M3" -or $Aspect -eq "B10M2" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M3" -Description "Cluster: Configured as DK-CLUSTER"
+    $B10M3 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-Cluster'
+    Test-AspectResult -Aspect "B10.M3" -String $B10M3 -Expected "DK-CLUSTER"
     Start-Marking -Aspect "B10.M3"
 }
 
-# B10.M4 - Cluster: DK-APP VM exists
-if ($Aspect -eq "B10" -or $Aspect -eq "B10.M4" -or $Aspect -eq "B10M4" -or !$Aspect) {
-    Initialize-Marking -Aspect "B10.M4" -Description "Cluster: DK-APP VM exists"
-    $B10M4 = Get-AspectResult -Ip 10.3.0.12 -Cmd 'Get-ClusterGroup -Name Skill39-DK-Infra | Get-VM'
-    Test-AspectResult -Aspect "B10.M4" -String $B10M4 -Expected "dk-app running"
+# B10.M4 - Cluster: Quorum witness configured
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M4" -or $Aspect -eq "B10M3" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M4" -Description "Cluster: Quorum witness configured"
+    $B10M4 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Get-ClusterResource | Where { $_.ResourceType -Like ''File Share Witness'' } | Get-ClusterParameter ''SharePath'''
+    Test-AspectResult -Aspect "B10.M4" -String $B10M4 -Expected "SharePath value: \\dk-dc.dk.skill39.wse\witness"
     Start-Marking -Aspect "B10.M4"
 }
 
-# B10.M5 - Cluster: Live migration works
-if ($Aspect -eq "B10" -or $Aspect -eq "B10.M5" -or $Aspect -eq "B10M5" -or !$Aspect) {
-    Initialize-Marking -Aspect "B10.M5" -Description "Cluster: Live migration works"
-    Test-AspectResult -Aspect "B10.M5" -Manual $True -Expected "`n Open Failover Cluster Manager `n Make sure that dk-app is running `n Try to live migrate VM to another node `n Live migrate it back to DK-SRV2"
+# B10.M5 - Cluster: DK-APP VM exists
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M5" -or $Aspect -eq "B10M4" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M5" -Description "Cluster: DK-APP VM exists"
+    $B10M5 = Get-AspectResult -Ip 10.3.0.12 -Cmd 'Get-ClusterGroup -Name Skill39-DK-Infra | Get-VM'
+    Test-AspectResult -Aspect "B10.M5" -String $B10M5 -Expected "dk-app running"
     Start-Marking -Aspect "B10.M5"
+}
+
+# B10.M6 - Cluster: Live migration works
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M6" -or $Aspect -eq "B10M5" -or !$Aspect) {
+    Initialize-Marking -Aspect "B10.M6" -Description "Cluster: Live migration works"
+    Test-AspectResult -Aspect "B10.M6" -Manual $True -Expected "`n Open Failover Cluster Manager `n Make sure that dk-app is running `n Try to live migrate VM to another node `n Live migrate it back to DK-SRV2"
+    Start-Marking -Aspect "B10.M6"
 }
 
 # B11.M1 - Setup: TCP/IP configured
@@ -577,17 +574,17 @@ if ($Aspect -eq "B11" -or $Aspect -eq "B11.M3" -or $Aspect -eq "B11M3" -or !$Asp
     Start-Marking -Aspect "B11.M3"
 }
 
-# B12.M1 - Web: User can access http://web.pl.skill39.wse
+# B12.M1 - Web: User can access http://web.dk.skill39.wse
 if ($Aspect -eq "B12" -or $Aspect -eq "B12.M1" -or $Aspect -eq "B12M1" -or !$Aspect) {
-    Initialize-Marking -Aspect "B12.M1" -Description "Web: User can access http://web.pl.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B12.M1" -Expected "DK-CLIENT: Try to log-in with user account into web portal at http://web.pl.skill39.wse"
+    Initialize-Marking -Aspect "B12.M1" -Description "Web: User can access http://web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B12.M1" -Expected "DK-CLIENT: Try to log-in with user account into web portal at http://web.dk.skill39.wse"
     Start-Marking -Aspect "B12.M1"
 }
 
-# B12.M2 - Web: User can access http://web.pl.skill39.wse
+# B12.M2 - Web: User can access http://web.dk.skill39.wse
 if ($Aspect -eq "B12" -or $Aspect -eq "B12.M2" -or $Aspect -eq "B12M2" -or !$Aspect) {
-    Initialize-Marking -Aspect "B12.M2" -Description "Web: User can access https://web.pl.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B12.M2" -Expected "DK-CLIENT: Try to log-in with user account into web portal at https://web.pl.skill39.wse"
+    Initialize-Marking -Aspect "B12.M2" -Description "Web: User can access https://web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B12.M2" -Expected "DK-CLIENT: Try to log-in with user account into web portal at https://web.dk.skill39.wse"
     Start-Marking -Aspect "B12.M2"
 }
 
