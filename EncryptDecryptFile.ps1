@@ -26,7 +26,7 @@ function Encrypt-File ($FilePath, $Key) {
     if (Test-Path $FilePath) {
         # Define the output file name for the encrypted file
         $OutputFile = $FilePath + ".encrypted"
-        
+
         # Initialize AES encryption
         $Aes = New-Object System.Security.Cryptography.AesCryptoServiceProvider
         $Aes.Key = $Key
@@ -35,13 +35,13 @@ function Encrypt-File ($FilePath, $Key) {
         # Create the encrypted file stream
         $FsCrypt = New-Object System.IO.FileStream $OutputFile, "Create"
         $CryptoStream = New-Object System.Security.Cryptography.CryptoStream $FsCrypt, $Aes.CreateEncryptor(), "Write"
-        
+
         # Read the input file as a byte stream
-        $FsIn = Get-Content -Path $FilePath -AsByteStream
+        $FsIn = New-Object System.IO.FileStream $FilePath, "Open"
 
         # Copy the content to the encrypted stream
         $FsIn.CopyTo($CryptoStream)
-        
+
         # Close all streams
         $FsIn.Close()
         $CryptoStream.Close()
@@ -56,7 +56,7 @@ function Decrypt-File ($FilePath, $Key) {
     if (Test-Path $FilePath) {
         # Extract the original file extension
         $OriginalExtension = ($FilePath -replace ".*\.encrypted", "")
-        
+
         # Change the output file extension back to the original
         $OutputFile = [IO.Path]::ChangeExtension($FilePath, $OriginalExtension)
 
@@ -68,13 +68,13 @@ function Decrypt-File ($FilePath, $Key) {
         # Create the decrypted file stream
         $FsCrypt = New-Object System.IO.FileStream $FilePath, "Open"
         $CryptoStream = New-Object System.Security.Cryptography.CryptoStream $FsCrypt, $Aes.CreateDecryptor(), "Read"
-        
+
         # Create the output file stream for the decrypted file
         $FsOut = New-Object System.IO.FileStream $OutputFile, "Create"
 
         # Copy the content to the decrypted stream
         $CryptoStream.CopyTo($FsOut)
-        
+
         # Close all streams
         $FsOut.Close()
         $CryptoStream.Close()
