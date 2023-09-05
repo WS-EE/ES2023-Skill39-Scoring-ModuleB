@@ -348,9 +348,9 @@ if ($Aspect -eq "B7" -or $Aspect -eq "B7.M5" -or $Aspect -eq "B7M5" -or !$Aspect
 
 # B7.M6 - GPO: Telemetery level is set to Enhanced
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M6" -or $Aspect -eq "B7M6" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M6" -Description "GPO: First Sign-In Animation is disabled"
-    $B7M6 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty ''HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'').EnableFirstLogonAnimation'
-    Test-AspectResult -Aspect "B7.M6" -String $B7M6 -Expected "0"
+    Initialize-Marking -Aspect "B7.M6" -Description "GPO: Telemetery level is set to Enhanced"
+    $B7M6 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection").AllowTelemetry'
+    Test-AspectResult -Aspect "B7.M6" -String $B7M6 -Expected "2"
     Start-Marking -Aspect "B7.M6"
 }
 
