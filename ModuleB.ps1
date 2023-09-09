@@ -191,7 +191,7 @@ if ($Aspect -eq "B2" -or $Aspect -eq "B2.M10" -or $Aspect -eq "B2M10" -or !$Aspe
     Start-Marking -Aspect "B2.M10"
 }
 
-# B2.M11 - Automation: Script generates CSV file of users in Skill39 Enterprise who haven't logged in
+# B2.11 - Automation: Script generates CSV file of users in Skill39 Enterprise who haven't logged in
 if ($Aspect -eq "B2" -or $Aspect -eq "B2.M11" -or $Aspect -eq "B2M11" -or !$Aspect) {
     Initialize-Marking -Aspect "B2.M11" -Description "Automation: Script generates CSV file of users in Skill39 Enterprise who haven't logged in"
     Test-AspectResult -Manual $True -Aspect "B2.M11" -Expected "`n 0 - There is no CSV file or CSV file is empty `n 1 - CSV file includes list of users who haven't logged in for atleast one domain `n 2 - CSV file includes list of users who haven't logged in for root and child domains `n 3 - Script runs without errors and has extra feature added, e.g. comments, etc"
@@ -240,12 +240,10 @@ if ($Aspect -eq "B5" -or $Aspect -eq "B5.M2" -or $Aspect -eq "B5M2" -or !$Aspect
 # B5.M3 - GPO: PowerShell remoting to DK-CLIENT works
 if ($Aspect -eq "B5" -or $Aspect -eq "B5.M3" -or $Aspect -eq "B5M3" -or !$Aspect) {
     Initialize-Marking -Aspect "B5.M3" -Description "GPO: PowerShell remoting to DK-CLIENT works"
-    $B8M9 = Get-AspectResult -Ip 10.3.0.1 -Cmd 'Test-WSMan -ComputerName DK-CLIENT'
+    $B8M9 = Get-AspectResult -Ip 10.2.0.1 -Cmd 'Test-WSMan -ComputerName DK-CLIENT.DK.SKILL39.WSE'
     Test-AspectResult -Aspect "B5.M3" -String $B8M9 -Expected "Output with WinRM protocol information"
     Start-Marking -Aspect "B5.M3"
 }
-
-# B5.M4 - 
 
 # B5.J1 - ADDS: Imported users from the excel file with correct parameters
 if ($Aspect -eq "B5" -or $Aspect -eq "B5.J1" -or $Aspect -eq "B5J1" -or !$Aspect) {
@@ -331,56 +329,63 @@ if ($Aspect -eq "B7" -or $Aspect -eq "B7.M3" -or $Aspect -eq "B7M3" -or !$Aspect
     Start-Marking -Aspect "B7.M3"
 }
 
-# B7.M4 - GPO: Network Drive is mapped respectively to the user department
+# B7.M4 - GPO: User certificate auto-enroll from PL-Users template
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M4" -or $Aspect -eq "B7M4" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M4" -Description "GPO: Network Drive is mapped respectively to the user department"
-    Test-AspectResult -Manual $True -Aspect "B7.M4" -Expected 'PL-CLIENT: Competitor role has competitor share mapped under G: drive. Get-PSDrive | Where { $_.Name -Eq ''G''}'
+    Initialize-Marking -Aspect "B7.M4" -Description "GPO: User certificate auto-enroll from PL-Users template"
+    Test-AspectResult -Manual $True -Aspect "B7.M4" -Expected "PL-CLIENT: Log-in to computer with domain account and check User Certificates"
     Start-Marking -Aspect "B7.M4"
 }
 
-# B7.M5 - GPO: First Sign-In Animation is disabled
+# B7.M5 - GPO: Network Drive is mapped respectively to the user department
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M5" -or $Aspect -eq "B7M5" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M5" -Description "GPO: First Sign-In Animation is disabled"
-    $B7M5 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty ''HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'').EnableFirstLogonAnimation'
-    Test-AspectResult -Aspect "B7.M5" -String $B7M5 -Expected "0"
+    Initialize-Marking -Aspect "B7.M5" -Description "GPO: Network Drive is mapped respectively to the user department"
+    Test-AspectResult -Manual $True -Aspect "B7.M5" -Expected 'PL-CLIENT: Competitor role has competitor share mapped under G: drive. Get-PSDrive | Where { $_.Name -Eq ''G''}'
     Start-Marking -Aspect "B7.M5"
 }
 
-# B7.M6 - GPO: Telemetery level is set to Enhanced
+# B7.M6 - GPO: First Sign-In Animation is disabled
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M6" -or $Aspect -eq "B7M6" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M6" -Description "GPO: Telemetery level is set to Enhanced"
-    $B7M6 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection").AllowTelemetry'
-    Test-AspectResult -Aspect "B7.M6" -String $B7M6 -Expected "2"
+    Initialize-Marking -Aspect "B7.M6" -Description "GPO: First Sign-In Animation is disabled"
+    $B7M6 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty ''HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'').EnableFirstLogonAnimation'
+    Test-AspectResult -Aspect "B7.M6" -String $B7M6 -Expected "0"
     Start-Marking -Aspect "B7.M6"
 }
 
-# B7.M7 - GPO: Most used is hidden from Start Menu
+# B7.M7 - GPO: Telemetery level is set to Enhanced
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M7" -or $Aspect -eq "B7M7" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M7" -Description "GPO: Most used is hidden from Start Menu"
-    Test-AspectResult -Manual $True -Aspect "B7.M7" -Expected "PL-CLIENT: Start Menu settings have Most used list disabled"
+    Initialize-Marking -Aspect "B7.M7" -Description "GPO: Telemetery level is set to Enhanced"
+    $B7M7 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '(Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection").AllowTelemetry'
+    Test-AspectResult -Aspect "B7.M7" -String $B7M7 -Expected "2"
     Start-Marking -Aspect "B7.M7"
 }
 
-# B7.M8 - GPO: Edge homepage and start-up page is web.dk.skill39.wse
+# B7.M8 - GPO: Most used is hidden from Start Menu
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M8" -or $Aspect -eq "B7M8" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M8" -Description "GPO: Edge homepage and start-up page is web.dk.skill39.wse"
-    Test-AspectResult -Manual $True -Aspect "B7.M8" -Expected "PL-CLIENT: Edge opens web.dk.skill39.wse"
+    Initialize-Marking -Aspect "B7.M8" -Description "GPO: Most used is hidden from Start Menu"
+    Test-AspectResult -Manual $True -Aspect "B7.M8" -Expected "PL-CLIENT: Start Menu settings have Most used list disabled"
     Start-Marking -Aspect "B7.M8"
 }
 
-# B7.M9 - GPO: dk-client.dk.skill39.wse is reachable
+# B7.M9 - GPO: Edge homepage and start-up page is web.dk.skill39.wse
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M9" -or $Aspect -eq "B7M9" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M9" -Description "GPO: dk-client.dk.skill39.wse is reachable"
-    $B7M9 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '$ProgressPreference = ''SilentlyContinue''; (Test-NetConnection dk-client.dk.skill39.wse).PingSucceeded'
-    Test-AspectResult -Aspect "B7.M9" -String $B7M9 -Expected "TRUE"
+    Initialize-Marking -Aspect "B7.M9" -Description "GPO: Edge homepage and start-up page is web.dk.skill39.wse"
+    Test-AspectResult -Manual $True -Aspect "B7.M9" -Expected "PL-CLIENT: Edge opens web.dk.skill39.wse"
     Start-Marking -Aspect "B7.M9"
 }
 
-# B7.M10 - RDS: Wordpad is accessible for PL Competitors
+# B7.M10 - GPO: dk-client.dk.skill39.wse is reachable
 if ($Aspect -eq "B7" -or $Aspect -eq "B7.M10" -or $Aspect -eq "B7M10" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M10" -Description "RDS: Wordpad is accessible for PL Competitors"
-    Test-AspectResult -Manual $True -Aspect "B7.M10" -Expected "`n Access https://rds.dk.skill39.wse/RDWeb `n Log-in with Competitor role account and try to open Wordpad `n Notepad is not avalable in RDWeb `n"
+    Initialize-Marking -Aspect "B7.M10" -Description "GPO: dk-client.dk.skill39.wse is reachable"
+    $B7M10 = Get-AspectResult -User "pl\administrator" -Ip "PL-CLIENT.PL.SKILL39.WSE" -Cmd '$ProgressPreference = ''SilentlyContinue''; (Test-NetConnection dk-client.dk.skill39.wse).PingSucceeded'
+    Test-AspectResult -Aspect "B7.M10" -String $B7M10 -Expected "TRUE"
     Start-Marking -Aspect "B7.M10"
+}
+
+# B7.M11 - RDS: Wordpad is accessible for PL Competitors
+if ($Aspect -eq "B7" -or $Aspect -eq "B7.M11" -or $Aspect -eq "B7M11" -or !$Aspect) {
+    Initialize-Marking -Aspect "B7.M11" -Description "RDS: Wordpad is accessible for PL Competitors"
+    Test-AspectResult -Manual $True -Aspect "B7.M11" -Expected "`n Access https://rds.dk.skill39.wse/RDWeb `n Log-in with Competitor role account and try to open Wordpad `n Notepad is not avalable in RDWeb `n"
+    Start-Marking -Aspect "B7.M11"
 }
 
 # B8.M1 - ADDS: dk.skill39.wse child domain
@@ -457,9 +462,9 @@ if ($Aspect -eq "B8" -or $Aspect -eq "B8.M9" -or $Aspect -eq "B8M9" -or !$Aspect
 
 # B8.M10 - DHCP: Configured according to DK infrastructure
 if ($Aspect -eq "B8" -or $Aspect -eq "B8.M10" -or $Aspect -eq "B8M10" -or !$Aspect) {
-    Initialize-Marking -Aspect "B8.M10" -Description "DHCP: Configured according to PL infrastructure"
+    Initialize-Marking -Aspect "B8.M10" -Description "DHCP: Configured according to DK infrastructure"
     $B8M10 = Get-AspectResult -Ip 10.3.0.1 -Cmd 'Get-DhcpServerv4OptionValue -ScopeId ''10.3.0.0'' | Select OptionId, Name, Value'
-    Test-AspectResult -Aspect "B8.M10" -String $B8M10 -Expected "`n Router - 10.3.0.254 `n DNS Domain Name - pl.skill39.wse `n DNS Servers - 10.3.0.1 `n"
+    Test-AspectResult -Aspect "B8.M10" -String $B8M10 -Expected "`n Router - 10.3.0.254 `n DNS Domain Name - dk.skill39.wse `n DNS Servers - 10.3.0.1 `n"
     Start-Marking -Aspect "B8.M10"
 }
 
@@ -504,10 +509,10 @@ if ($Aspect -eq "B9" -or $Aspect -eq "B9.M3" -or $Aspect -eq "B9M3" -or !$Aspect
 }
 
 # B10.M1 - Web: IIS Certificate has been issued by "DK-Server" template
-if ($Aspect -eq "B10.M1" -or $Aspect -eq "B10.M1" -or $Aspect -eq "B10M1" -or !$Aspect) {
+if ($Aspect -eq "B10" -or $Aspect -eq "B10.M1" -or $Aspect -eq "B10M1" -or !$Aspect) {
     Initialize-Marking -Aspect "B10.M1" -Description "Web: IIS Certificate has been issued by 'DK-Server' template"
     $B10M1 = Get-AspectResult -Ip 10.3.0.11 -Cmd 'Import-Module WebAdministration; $thumbprint = (Get-ChildItem IIS:SSLBindings | Where { $_.Port -Like 443 }).Thumbprint; $cert = Get-ChildItem -Path Cert:\LocalMachine\My | Where { $_.Thumbprint -eq $thumbprint }; ($cert.Extensions | Where { $_.Oid.FriendlyName -eq ''Certificate Template Information'' }).Format(0)'
-    Test-AspectResult -Aspect "B10.M1" -String $B10M1 -Expected "Template=PL-Server"
+    Test-AspectResult -Aspect "B10.M1" -String $B10M1 -Expected "Template=DK-Server"
     Start-Marking -Aspect "B10.M1"
 }
 
@@ -598,7 +603,7 @@ if ($Aspect -eq "B12" -or $Aspect -eq "B12.M3" -or $Aspect -eq "B12M3" -or !$Asp
 
 # B12.M4 - RDS: Notepad is accessible for DK Experts
 if ($Aspect -eq "B12" -or $Aspect -eq "B12.M4" -or $Aspect -eq "B12M4" -or !$Aspect) {
-    Initialize-Marking -Aspect "B7.M10" -Description "RDS: Notepad is accessible for DK Experts"
+    Initialize-Marking -Aspect "B12.M4" -Description "RDS: Notepad is accessible for DK Experts"
     Test-AspectResult -Manual $True -Aspect "B12.M4" -Expected "`n Access https://rds.dk.skill39.wse/RDWeb `n Log-in with Experts role account and try to open Notepad `n Wordprad is not avalable in RDWeb `n"
     Start-Marking -Aspect "B12.M4"
 }
